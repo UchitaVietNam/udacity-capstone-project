@@ -1,11 +1,11 @@
 import * as AWS from 'aws-sdk'
 import { ITodoService } from '../ITodoService'
-import { TodoItem } from '../../models/TodoItem'
-import { TodoUpdate } from '../../models/TodoUpdate'
+import { TodoItem } from '../../models/request/todos/TodoItem'
+import { TodoUpdate } from '../../models/request/todos/TodoUpdate'
 import {
   ReqCreateTodo,
   ReqUpdateTodo
-} from '../../models/request/ReqTodoModels'
+} from '../../models/request/todos/ReqTodoModels'
 import { TodoRepository } from '../../repositories/TodoRepository'
 import ENVIROMENTS from '../../utils/enviromentsUtil'
 import { LOG_NAME, createLogger } from '../../utils/loggerUtil'

@@ -1,59 +1,20 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-import { TodoItem } from '../models/TodoItem'
-import { createDocumentClient } from './DocumentClient'
-import { AWSError } from 'aws-sdk'
-import { PromiseResult } from 'aws-sdk/lib/request'
+import { TodoItem } from '../models/request/todos/TodoItem'
 import { LOG_NAME, createLogger } from '../utils/loggerUtil'
-import { TodoUpdate, TodoUpdateImage } from '../models/TodoUpdate'
+import { TodoUpdate, TodoUpdateImage } from '../models/request/todos/TodoUpdate'
 import ENVIROMENTS from '../utils/enviromentsUtil'
+import { CommonRepository } from './CommonRepository'
 
 const LOGGER = createLogger(LOG_NAME.TODO_REPO)
 const ENVS = ENVIROMENTS()
 
 /** Todos repositories */
-export class TodoRepository {
-  private readonly docClient: DocumentClient
+export class TodoRepository extends CommonRepository {
   private readonly todosTableName: string
 
-  constructor(docClient: DocumentClient = createDocumentClient()) {
-    this.docClient = docClient
+  constructor() {
+    super()
     this.todosTableName = ENVS.TODOS_TABLE_NAME
-  }
-
-  /**
-   * Execute a get query
-   * @param query Query
-   * @returns Result
-   */
-  private async directlyAccess(
-    query: DocumentClient.QueryInput
-  ): Promise<PromiseResult<DocumentClient.QueryOutput, AWSError>> {
-    LOGGER.info(`Start Execute A Get Query '${query}'`)
-    return await this.docClient.query(query).promise()
-  }
-
-  /**
-   * Execute a update query
-   * @param query Query
-   * @returns Result
-   */
-  private async editsItem(
-    query: DocumentClient.UpdateItemInput
-  ): Promise<PromiseResult<DocumentClient.UpdateItemOutput, AWSError>> {
-    LOGGER.info(`Start Execute A Update Query '${query}'`)
-    return await this.docClient.update(query).promise()
-  }
-
-  /**
-   * Execute a insert query
-   * @param query Query
-   * @returns Result
-   */
-  private async createsItem(
-    query: DocumentClient.PutItemInput
-  ): Promise<PromiseResult<DocumentClient.PutItemOutput, AWSError>> {
-    LOGGER.info(`Start Execute A Insert Query '${query}'`)
-    return await this.docClient.put(query).promise()
   }
 
   /**
@@ -124,8 +85,7 @@ export class TodoRepository {
         userId: updateTodo.userId
       },
       ExpressionAttributeNames: { '#N': 'name' },
-      UpdateExpression:
-        'set #N = :name, dueDate = :dueDate, done = :done',
+      UpdateExpression: 'set #N = :name, dueDate = :dueDate, done = :done',
       ExpressionAttributeValues: {
         ':name': updateTodo.name,
         ':dueDate': updateTodo.dueDate,
@@ -173,15 +133,14 @@ export class TodoRepository {
     LOGGER.info(
       `Start Delete Todo Item By ID '${todoId}' And User ID '${userId}'`
     )
-    await this.docClient
-      .delete({
-        TableName: this.todosTableName,
-        Key: {
-          todoId,
-          userId
-        }
-      })
-      .promise()
+    const query: DocumentClient.DeleteItemInput = {
+      TableName: this.todosTableName,
+      Key: {
+        todoId,
+        userId
+      }
+    }
+    await this.deleteItem(query)
     LOGGER.info(`Todo Item By ID '${todoId}' And User ID '${userId}' Deleted`)
   }
 }

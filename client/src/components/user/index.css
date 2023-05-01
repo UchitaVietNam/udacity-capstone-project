@@ -1,0 +1,21 @@
+.user-info {
+  display: grid;
+  justify-content: center;
+}
+
+.user-info > form {
+  display: grid;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.user-info > form > div,
+button {
+  display: grid;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.user-info > .ui.card > img {
+  margin: 0 auto;
+}

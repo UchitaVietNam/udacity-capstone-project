@@ -15,6 +15,13 @@ export const getUserId = (event: APIGatewayProxyEvent): string => {
   return parseUserId(jwtToken)
 }
 
+export const getUserIdByToken = (jwtToken: string): string => {
+  const split = jwtToken.split(' ')
+  const token = split[1]
+  // Get user id from JWT token
+  return parseUserId(token)
+}
+
 /** Effect type */
 type TEffect = 'Allow' | 'Deny'
 

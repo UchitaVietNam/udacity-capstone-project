@@ -1,0 +1,23 @@
+.chat-home-page {
+  display: flex;
+  height: 100%;
+  /* margin-top: 10%; */
+}
+
+.ui.grid {
+  width: 100%;
+}
+
+.list-charts-home-page {
+  padding: 1%;
+  width: 30%;
+  height: 100%;
+  border-right: 1px solid black;
+}
+
+.four.wide.column {
+  overflow-y: auto;
+  height: 75%;
+  border: 1px solid gray;
+  padding: 1%;
+}
