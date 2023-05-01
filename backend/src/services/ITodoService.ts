@@ -1,5 +1,5 @@
-import { TodoItem } from '../models/TodoItem'
-import { ReqCreateTodo, ReqUpdateTodo } from '../models/request/ReqTodoModels'
+import { TodoItem } from '../models/request/todos/TodoItem'
+import { ReqCreateTodo, ReqUpdateTodo } from '../models/request/todos/ReqTodoModels'
 
 export interface ITodoService {
   getAllTodoByUserId(userId: string): Promise<TodoItem[]>

@@ -1,6 +1,6 @@
 org: uchitavietnam
-app: serverless-todo-app
-service: serverless-todo-app
+app: serverless-capstone-app
+service: serverless-capstone-app
 
 plugins:
   - serverless-webpack
@@ -22,11 +22,23 @@ provider:
     apiGateway: true
 
   environment:
+    # AUTH0
     AUTHO_JWKS_UTL: https://uchita.jp.auth0.com/.well-known/jwks.json
+    # USER
+    USER_TABLE: User-${self:provider.stage}
+    USER_CREATED_AT_INDEX: CreatedAtIndex
+    USER_S3_BUCKET_NAME: user-s3-bucket-${self:provider.stage}
+    USER_SIGNED_URL_EXP: 3000
+    # TODOS
     TODOS_TABLE: Todos-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     TODO_S3_BUCKET_NAME: todos-s3-bucket-${self:provider.stage}
     TODO_SIGNED_URL_EXP: 300
+    # CHAT
+    CHAT_TABLE: Chat-${self:provider.stage}
+    CHAT_TIME_INDEX: ChatTimeIndex
+    # CONNECTION
+    CONNECTIONS_TABLE: Connections-${self:provider.stage}
 
   logs:
     restApi: true
@@ -56,11 +68,134 @@ custom:
         schema: ${file(models/update-todo-model.json)}
 
 functions:
+  # AUTH
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
 
+  # USER
+  CreateUser:
+    handler: src/lambda/http/user/createUser.handler
+    events:
+      - http:
+          method: post
+          path: user
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          # request:
+          #   schemas:
+          #     application/json: ${file(models/create-todo-model.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.USER_S3_BUCKET_NAME}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}
+
+  GetUserInfo:
+    handler: src/lambda/http/user/getUserInfo.handler
+    events:
+      - http:
+          method: get
+          path: user
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.USER_S3_BUCKET_NAME}/*
+
+  GetAllUser:
+    handler: src/lambda/http/user/getAllUser.handler
+    events:
+      - http:
+          method: get
+          path: user/all
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.USER_S3_BUCKET_NAME}/*
+
+  UpdateUserInfo:
+    handler: src/lambda/http/user/updateUserInfo.handler
+    events:
+      - http:
+          method: post
+          path: user/update
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          # request:
+          #   schemas:
+          #     application/json: ${file(models/update-todo-model.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.USER_S3_BUCKET_NAME}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USER_TABLE}
+
+  # CHAT
+  SendNewMessage:
+    handler: src/lambda/http/chat/sendNewMessage.handler
+    events:
+      - http:
+          method: post
+          path: chat/new
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          # request:
+          #   schemas:
+          #     application/json: ${file(models/create-todo-model.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CHAT_TABLE}
+
+  GetAllMessage:
+    handler: src/lambda/http/chat/getAllMessage.handler
+    events:
+      - http:
+          method: get
+          path: chat/{targetUserId}
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CHAT_TABLE}
+
+  # TODOS
   GetTodos:
-    handler: src/lambda/http/getTodos.handler
+    handler: src/lambda/http/todos/getTodos.handler
     events:
       - http:
           method: get
@@ -79,7 +214,7 @@ functions:
         Resource: arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET_NAME}/*
 
   CreateTodo:
-    handler: src/lambda/http/createTodo.handler
+    handler: src/lambda/http/todos/createTodo.handler
     events:
       - http:
           method: post
@@ -97,7 +232,7 @@ functions:
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
   UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
+    handler: src/lambda/http/todos/updateTodo.handler
     events:
       - http:
           method: patch
@@ -116,7 +251,7 @@ functions:
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
   DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
+    handler: src/lambda/http/todos/deleteTodo.handler
     events:
       - http:
           method: delete
@@ -137,7 +272,7 @@ functions:
         Resource: arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET_NAME}/*
 
   GenerateUploadUrl:
-    handler: src/lambda/http/generateUploadUrl.handler
+    handler: src/lambda/http/todos/generateUploadUrl.handler
     events:
       - http:
           method: post
@@ -157,6 +292,52 @@ functions:
           - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
+  # CONNECTION
+  ConnectHandler:
+    handler: src/lambda/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+          cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+
+  DisconnectHandler:
+    handler: src/lambda/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+          cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+
+  SyncChat:
+    environment:
+      STAGE: ${self:provider.stage}
+      API_ID:
+        Ref: WebsocketsApi
+      REGION: ${self:provider.region}
+    handler: src/lambda/stream/chatSync.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt ChatTable.StreamArn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+      - Effect: Allow
+        Action:
+          - execute-api:ManageConnections
+        Resource: arn:aws:execute-api:${self:provider.region}:*:*/*/*/@connections/*
+
 resources:
   Resources:
     GatewayResponseDefault4XX:
@@ -169,6 +350,62 @@ resources:
         ResponseType: DEFAULT_4XX
         RestApiId:
           Ref: ApiGatewayRestApi
+
+    UserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: uniqueId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: uniqueId
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.USER_TABLE}
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.USER_CREATED_AT_INDEX}
+            KeySchema:
+              - AttributeName: uniqueId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    ChatTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: chatTime
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: userId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+        TableName: ${self:provider.environment.CHAT_TABLE}
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.CHAT_TIME_INDEX}
+            KeySchema:
+              - AttributeName: id
+                KeyType: HASH
+              - AttributeName: chatTime
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
 
     TodosTable:
       Type: AWS::DynamoDB::Table
@@ -197,6 +434,18 @@ resources:
             Projection:
               ProjectionType: ALL
 
+    WebSocketConnectionsDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.CONNECTIONS_TABLE}
+
     RequestBodyValidator:
       Type: AWS::ApiGateway::RequestValidator
       Properties:
@@ -210,6 +459,14 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.TODO_S3_BUCKET_NAME}
+        OwnershipControls:
+          Rules:
+            - ObjectOwnership: ObjectWriter
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
@@ -224,7 +481,33 @@ resources:
                 - HEAD
               MaxAge: 3000
 
-    BucketPolicy:
+    UserAvatarBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.USER_S3_BUCKET_NAME}
+        OwnershipControls:
+          Rules:
+            - ObjectOwnership: ObjectWriter
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    BucketPolicy1:
       Type: AWS::S3::BucketPolicy
       Properties:
         PolicyDocument:
@@ -237,3 +520,17 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET_NAME}/*'
         Bucket: !Ref AttachmentsBucket
+
+    BucketPolicy2:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: UserS3Policy
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.USER_S3_BUCKET_NAME}/*'
+        Bucket: !Ref UserAvatarBucket
