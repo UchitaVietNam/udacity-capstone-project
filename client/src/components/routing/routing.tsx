@@ -20,7 +20,7 @@ export const makeAuthRouting = () => {
     <Router history={history}>
       <div>
         <Route
-          path="/callback"
+          path="/callback*"
           render={(props) => {
             handleAuthentication(props)
             return <Callback />
