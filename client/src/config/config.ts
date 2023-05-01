@@ -4,7 +4,7 @@ export const apiEndpoint = `https://${apiId}.execute-api.us-east-1.amazonaws.com
 export const authConfig = {
   domain: 'uchita.jp.auth0.com', // Auth0 domain
   clientId: 'fpE5XHGiOko9TikY3RgTIQ1YDiJpvvL9', // Auth0 client id
-  callbackUrl: 'http://localhost:3000/callback'
+  callbackUrl: 'https://d370nu2nj1qpv8.cloudfront.net/callback'
 }
 
 export const SOCKET_URL = `wss://6dtl6fxbra.execute-api.us-east-1.amazonaws.com/dev?idToken=Bearer ${localStorage.getItem(
