@@ -1,6 +1,15 @@
-I reused the ToDos project and added more features such as:
-1. Saving user information when logging in for the first time and allowing them to edit their avatar/user name.
-2. Using web sockets and DynamoDB to implement a real-time chat feature between users.
+# I reused the ToDos project and added more features such as:
 
-I have also deployed my project to CloudFront, and the URL of the website is:
+*  Saving user information when logging in for the first time and allowing them to edit their avatar and user name.
+*  Using web sockets and DynamoDB to implement a real-time chat feature between users.
+* I have also deployed my project to CloudFront, and the URL of the website is:
 https://d370nu2nj1qpv8.cloudfront.net
+* Please use the above URL to review
+
+# Project demo:
+
+<video width="1080" controls>
+  <source src="./demo-video.mov" type="video/mp4">
+</video>
+
+**Thank you very much**

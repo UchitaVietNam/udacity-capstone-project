@@ -25,7 +25,7 @@ const ChatDetails: React.VFC<any> = (props): JSX.Element => {
   }, [chatMessage])
 
   const connection = async () => {
-    const socket = new WebSocket(SOCKET_URL)
+    const socket = new WebSocket(await SOCKET_URL())
     socket.onopen = () => {}
 
     socket.onmessage = (event) => {
