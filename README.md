@@ -9,7 +9,8 @@ https://d370nu2nj1qpv8.cloudfront.net
 # Project demo:
 
 <video width="1080" controls>
-  <source src="./demo-video.mov" type="video/mp4">
+  <source src="[./demo-video.mov](https://github.com/UchitaVietNam/udacity-capstone-project/blob/main/demo-video.mov)" type="video/mp4">
 </video>
 
+https://github.com/UchitaVietNam/udacity-capstone-project/blob/main/demo-video.mov
 **Thank you very much**
